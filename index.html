@@ -426,8 +426,8 @@
                                 }
                             }
                             
-                            // Track if this is a game in progress
-                            if (!game.isFinal) {
+                            // Track if this is a LIVE game (not pre-game, not final)
+                            if (!game.isFinal && !game.isPreGame) {
                                 gamesInProgress++;
                             }
                         }
@@ -559,7 +559,7 @@
 
             return (
                 <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 p-4 md:p-6">
-                    <div className="max-w-5xl mx-auto">
+                    <div className="mx-auto">
                         <div className="text-center mb-8">
                             <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
                                 🏆 Fantasy Football Live Tracker
@@ -590,11 +590,11 @@
                         </div>
                         </div>
 
-                        {/* Two Column Layout: NFL Scores Left, Standings Right */}
-                        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
-                            {/* Left Column: NFL Scores (Vertical) */}
-                            <div className="lg:col-span-2">
-                                <div className="bg-white rounded-xl shadow-2xl p-6 sticky top-4" style={{height: '600px', display: 'flex', flexDirection: 'column'}}>
+                        {/* Three Column Layout: NFL Scores | Season Standings | Week Standings */}
+                        <div className="flex gap-6 mb-6 mx-auto" style={{maxWidth: '1583px'}}>
+                            {/* Column 1: NFL Scores */}
+                            <div style={{width: '475px'}}>
+                                <div className="bg-white rounded-xl shadow-2xl p-6 sticky top-4" style={{height: '600px', display: 'flex', flexDirection: 'column', width: '475px'}}>
                                     <div className="mb-4">
                                         <h2 className="text-xl font-bold text-gray-800">🏈 Live Scores</h2>
                                     </div>
@@ -657,12 +657,12 @@
                                 </div>
                             </div>
 
-                            {/* Right Column: Standings */}
-                            <div className="lg:col-span-3">
+                            {/* Column 2: Season Standings (wider) */}
+                            <div style={{width: '530px'}}>
                         {/* Standings - Horizontal Layout */}
-                        <div className="bg-white rounded-xl shadow-2xl p-6 mb-6 sticky top-4" style={{maxWidth: 'calc(66.666% * 1.45)', height: '600px', display: 'flex', flexDirection: 'column'}}>
+                        <div className="bg-white rounded-xl shadow-2xl p-6 mb-6 sticky top-4" style={{height: '600px', display: 'flex', flexDirection: 'column', width: '530px'}}>
                             <div className="flex justify-between items-center mb-4">
-                                <h2 className="text-2xl font-bold text-gray-800">LIVE STANDINGS</h2>
+                                <h2 className="text-2xl font-bold text-gray-800">LIVE SEASON STANDINGS</h2>
                                 <p className="text-sm text-gray-600">
                                     {games.some(g => !g.isFinal) ? '⚡ Live - Projected if games end now' : 'Final Results'}
                                 </p>
@@ -697,6 +697,51 @@
                                             </span>
                                             <span className="text-sm text-gray-600 w-16 text-center">
                                                 {player.weekWins}/{games.length}
+                                            </span>
+                                            <span className="text-sm text-green-600 flex-1">
+                                                {player.gamesInProgress > 0 && (
+                                                    <>Winning {player.liveWins}/{player.gamesInProgress} live</>
+                                                )}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                            </div>
+                        
+                            {/* Column 3: Week Standings (wider) */}
+                            <div style={{width: '530px'}}>
+                        <div className="bg-white rounded-xl shadow-2xl p-6 sticky top-4" style={{height: '600px', display: 'flex', flexDirection: 'column', width: '530px'}}>
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-2xl font-bold text-gray-800">WEEK {currentWeek} STANDINGS</h2>
+                                <p className="text-sm text-gray-600">
+                                    {games.some(g => !g.isFinal) ? '⚡ Live' : 'Final'}
+                                </p>
+                            </div>
+                            <div className="space-y-1 overflow-y-auto flex-1">
+                                {calculateWeeklyWins()
+                                    .sort((a, b) => {
+                                        if (b.weekWins !== a.weekWins) {
+                                            return b.weekWins - a.weekWins;
+                                        }
+                                        return a.id - b.id;
+                                    })
+                                    .map((player, index) => {
+                                    return (
+                                        <div key={player.id} className={`p-1.5 rounded border flex items-center ${
+                                                index === 0 ? 'bg-green-50 border-green-300' :
+                                                index === 1 ? 'bg-blue-50 border-blue-300' :
+                                                index === 2 ? 'bg-orange-50 border-orange-300' :
+                                                'bg-white border-gray-200'
+                                            }`}>
+                                            <span className="text-base font-bold text-gray-600 w-10"># {index + 1}</span>
+                                            <span className="font-bold text-gray-800 w-48">{player.name}</span>
+                                            <span className="text-lg font-bold text-gray-900 w-12 text-center">
+                                                {player.weekWins}
+                                            </span>
+                                            <span className="text-sm text-gray-600 w-16 text-center">
+                                                / {games.length}
                                             </span>
                                             <span className="text-sm text-green-600 flex-1">
                                                 {player.gamesInProgress > 0 && (
@@ -803,7 +848,7 @@
 
                         {/* Picks */}
                         {games.length > 0 && (
-                            <div className="bg-white rounded-xl shadow-2xl p-8 mx-auto" style={{maxWidth: '1536px'}}>&lt;
+                            <div className="bg-white rounded-xl shadow-2xl p-8 mx-auto" style={{maxWidth: '1583px'}}>&lt;
                                 <div className="flex justify-between items-center mb-4">
                                     <h2 className="text-2xl font-bold text-gray-800">📋 Picks</h2>
                                     <button onClick={() => setShowImport(!showImport)} className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold">
