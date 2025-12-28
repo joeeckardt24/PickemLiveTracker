@@ -55,6 +55,8 @@
             const [showImport, setShowImport] = useState(false);
             const [importText, setImportText] = useState('');
             const [importError, setImportError] = useState('');
+            const [showPlayerImport, setShowPlayerImport] = useState(false);
+            const [playerImportText, setPlayerImportText] = useState('');
 
             // Save to localStorage
             useEffect(() => {
@@ -328,6 +330,44 @@
                 updatePlayer(playerId, 'seasonWins', Math.max(0, wins));
             };
 
+            const importPlayers = () => {
+                try {
+                    const text = playerImportText.trim();
+                    if (!text) return;
+
+                    // Parse tab-separated format: "1\tjoey picks 26\t164"
+                    const lines = text.split('\n').filter(line => line.trim());
+                    
+                    const importedPlayers = lines.map((line, index) => {
+                        const parts = line.split('\t').map(p => p.trim());
+                        
+                        // parts[0] = rank, parts[1] = name, parts[2] = wins
+                        const name = parts[1] || `Player ${index + 1}`;
+                        const wins = parseInt(parts[2]) || 0;
+                        
+                        return {
+                            id: index + 1,
+                            name: name,
+                            seasonWins: wins,
+                            currentWeekPicks: []
+                        };
+                    });
+
+                    if (importedPlayers.length === 0) {
+                        alert('No players found. Make sure format is correct.');
+                        return;
+                    }
+
+                    setPlayers(importedPlayers);
+                    setPlayerImportText('');
+                    setShowPlayerImport(false);
+                    alert(`✅ Imported ${importedPlayers.length} players!`);
+                } catch (error) {
+                    alert('Error parsing player data. Please check the format.');
+                    console.error('Import error:', error);
+                }
+            };
+
             // Pick management
             const handlePickChange = (playerId, gameId, team) => {
                 setPlayers(players.map(player => {
@@ -355,10 +395,19 @@
 
             // Calculate weekly wins (including games in progress based on current score)
             const calculateWeeklyWins = () => {
+                // Count games that have started (not pre-game anymore)
+                const startedGames = games.filter(g => !g.isPreGame);
+                
                 return players.map(player => {
                     let weekWins = 0;
                     let gamesInProgress = 0;
                     let liveWins = 0; // Currently winning in live games
+                    
+                    // Count picks made for started games
+                    const picksForStartedGames = player.currentWeekPicks.filter(pick => {
+                        const game = games.find(g => g.id === pick.gameId);
+                        return game && !game.isPreGame;
+                    });
                     
                     player.currentWeekPicks.forEach(pick => {
                         const game = games.find(g => g.id === pick.gameId);
@@ -383,6 +432,9 @@
                             }
                         }
                     });
+                    
+                    // Missing picks for started games = automatic losses (already counted as 0 wins)
+                    // No change needed - just don't count them as wins
                     
                     return { ...player, weekWins, gamesInProgress, liveWins };
                 });
@@ -828,11 +880,19 @@
                                                             }
                                                             return (
                                                                 <td key={game.id} className="px-1 py-2 text-center">
-                                                                    <select value={pickedTeam || ''} onChange={(e) => handlePickChange(player.id, game.id, e.target.value)} className={`border rounded px-1 py-1 text-sm w-full ${statusClass}`}>
-                                                                        <option value="">-</option>
-                                                                        {game.homeTeam && <option value={game.homeTeam}>{game.homeTeam}</option>}
-                                                                        {game.awayTeam && <option value={game.awayTeam}>{game.awayTeam}</option>}
-                                                                    </select>
+                                                                    {!game.isPreGame ? (
+                                                                        // Game has started - show locked pick or MISS
+                                                                        <div className={`border rounded px-1 py-1 text-sm w-full font-bold ${statusClass}`}>
+                                                                            {pickedTeam || '❌'}
+                                                                        </div>
+                                                                    ) : (
+                                                                        // Game hasn't started - allow picking
+                                                                        <select value={pickedTeam || ''} onChange={(e) => handlePickChange(player.id, game.id, e.target.value)} className={`border rounded px-1 py-1 text-sm w-full ${statusClass}`}>
+                                                                            <option value="">-</option>
+                                                                            {game.homeTeam && <option value={game.homeTeam}>{game.homeTeam}</option>}
+                                                                            {game.awayTeam && <option value={game.awayTeam}>{game.awayTeam}</option>}
+                                                                        </select>
+                                                                    )}
                                                                 </td>
                                                             );
                                                         })}
@@ -868,6 +928,31 @@
                             
                             {editMode && (
                                 <div className="space-y-3 mt-4 pt-4 border-t border-gray-200">
+                                    <button onClick={() => setShowPlayerImport(!showPlayerImport)} className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold mb-3">
+                                        📥 Quick Import Players
+                                    </button>
+                                    
+                                    {showPlayerImport && (
+                                        <div className="bg-purple-50 border-2 border-purple-300 rounded-lg p-4 mb-3">
+                                            <h3 className="font-bold text-purple-900 mb-2">Paste Player Data</h3>
+                                            <p className="text-xs text-purple-700 mb-2">Paste tab-separated data: Rank [TAB] Name [TAB] Wins</p>
+                                            <textarea 
+                                                value={playerImportText}
+                                                onChange={(e) => setPlayerImportText(e.target.value)}
+                                                className="w-full border border-purple-300 rounded p-2 text-sm font-mono h-32"
+                                                placeholder="Paste your player data here..."
+                                            />
+                                            <div className="flex gap-2 mt-2">
+                                                <button onClick={importPlayers} className="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded font-semibold">
+                                                    Import
+                                                </button>
+                                                <button onClick={() => {setShowPlayerImport(false); setPlayerImportText('');}} className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded font-semibold">
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                    
                                     {players.map(player => (
                                         <div key={player.id} className="bg-gray-50 rounded-lg p-4 border-2 border-gray-200">
                                             <div className="flex items-start gap-3">
