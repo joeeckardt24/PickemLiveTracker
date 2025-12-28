@@ -543,11 +543,8 @@
                             {/* Left Column: NFL Scores (Vertical) */}
                             <div className="lg:col-span-2">
                                 <div className="bg-white rounded-xl shadow-2xl p-6 sticky top-4" style={{height: '600px', display: 'flex', flexDirection: 'column'}}>
-                                    <div className="flex justify-between items-center mb-4">
+                                    <div className="mb-4">
                                         <h2 className="text-xl font-bold text-gray-800">🏈 Live Scores</h2>
-                                        <button onClick={() => setEditGamesMode(!editGamesMode)} className="text-sm px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded">
-                                            {editGamesMode ? '✓' : '✏️'}
-                                        </button>
                                     </div>
                                     
                                     {games.length === 0 ? (
