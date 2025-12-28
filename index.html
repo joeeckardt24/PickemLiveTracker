@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -43,10 +44,9 @@
                 };
             };
 
-            const [state] = useState(loadState());
-            const [players, setPlayers] = useState(state.players);
-            const [games, setGames] = useState(state.games);
-            const [currentWeek, setCurrentWeek] = useState(state.currentWeek);
+            const [players, setPlayers] = useState(() => loadState().players);
+            const [games, setGames] = useState(() => loadState().games);
+            const [currentWeek, setCurrentWeek] = useState(() => loadState().currentWeek);
             const [editMode, setEditMode] = useState(false);
             const [editGamesMode, setEditGamesMode] = useState(false);
             const [autoUpdate, setAutoUpdate] = useState(true);
