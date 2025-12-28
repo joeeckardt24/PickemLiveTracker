@@ -714,27 +714,27 @@
                             <div style={{width: '530px'}}>
                         <div className="bg-white rounded-xl shadow-2xl p-6 sticky top-4" style={{height: '600px', display: 'flex', flexDirection: 'column', width: '530px'}}>
                             <div className="flex justify-between items-center mb-4">
-                                <h2 className="text-2xl font-bold text-gray-800">WEEK {currentWeek} STANDINGS</h2>
+                                <h2 className="text-2xl font-bold text-gray-800">LIVE WEEKLY (CURRENT WEEK) STANDINGS</h2>
                                 <p className="text-sm text-gray-600">
                                     {games.some(g => !g.isFinal) ? '⚡ Live' : 'Final'}
                                 </p>
                             </div>
                             <div className="space-y-1 overflow-y-auto flex-1">
-                                {calculateWeeklyWins()
-                                    .sort((a, b) => {
+                                {(() => {
+                                    const sortedPlayers = calculateWeeklyWins().sort((a, b) => {
                                         if (b.weekWins !== a.weekWins) {
                                             return b.weekWins - a.weekWins;
                                         }
                                         return a.id - b.id;
-                                    })
-                                    .map((player, index) => {
-                                    return (
-                                        <div key={player.id} className={`p-1.5 rounded border flex items-center ${
-                                                index === 0 ? 'bg-green-50 border-green-300' :
-                                                index === 1 ? 'bg-blue-50 border-blue-300' :
-                                                index === 2 ? 'bg-orange-50 border-orange-300' :
-                                                'bg-white border-gray-200'
-                                            }`}>
+                                    });
+                                    const topScore = sortedPlayers[0]?.weekWins || 0;
+                                    
+                                    return sortedPlayers.map((player, index) => {
+                                        const isWinning = player.weekWins === topScore;
+                                        return (
+                                            <div key={player.id} className={`p-1.5 rounded border flex items-center ${
+                                                    isWinning ? 'bg-green-50 border-green-300' : 'bg-white border-gray-200'
+                                                }`}>
                                             <span className="text-base font-bold text-gray-600 w-10"># {index + 1}</span>
                                             <span className="font-bold text-gray-800 w-48">{player.name}</span>
                                             <span className="text-lg font-bold text-gray-900 w-12 text-center">
@@ -750,7 +750,8 @@
                                             </span>
                                         </div>
                                     );
-                                })}
+                                });
+                                })()}
                             </div>
                         </div>
                             </div>
